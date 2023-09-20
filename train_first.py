@@ -73,8 +73,22 @@ def main(config_path):
     log_interval = config.get('log_interval', 10)
     saving_epoch = config.get('save_freq', 2)
 
+
+
+    t_list = []
+    with open("t.txt") as t:
+        lines = t.readlines()
+        for l in lines:
+            t_list.append(l)
+
+    random.shuffle(t_list)
+    train_list = t_list[0:40000]
+    val_list = t_list[-600:]
+
     # load data
-    train_list, val_list = get_data_path_list(train_path, val_path)
+    #train_list, val_list = get_data_path_list(train_path, val_path)
+
+    #print(train_list)
 
     train_dataloader = build_dataloader(train_list,
                                         batch_size=batch_size,
@@ -147,7 +161,7 @@ def main(config_path):
             batch = [b.to(device) for b in batch]
             texts, input_lengths, mels, mel_input_length, labels, ref_mels, ref_labels = batch
 
-            mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to('cuda')
+            mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to(device)
             m = length_to_mask(input_lengths)
 
             text_mask = length_to_mask(input_lengths).to(texts.device)
@@ -198,7 +212,7 @@ def main(config_path):
                 en.append(asr[bib, :, random_start:random_start+mel_len])
                 gt.append(mels[bib, :, (random_start * 2):((random_start+mel_len) * 2)])
                 
-            mask = length_to_mask(torch.LongTensor([mel_len] * batch_size)).to('cuda')
+            mask = length_to_mask(torch.LongTensor([mel_len] * batch_size)).to(device)
             en = torch.stack(en)
             gt = torch.stack(gt).detach()
 
@@ -345,7 +359,7 @@ def main(config_path):
                 texts, input_lengths, mels, mel_input_length, labels, ref_mels, ref_labels = batch
                 
                 with torch.no_grad():
-                    mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to('cuda')
+                    mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to(device)
                     m = length_to_mask(input_lengths)
                     ppgs, s2s_pred, s2s_attn_feat = model.text_aligner(mels, mask, texts)
 

@@ -72,8 +72,22 @@ def main(config_path):
     log_interval = config.get('log_interval', 10)
     saving_epoch = config.get('save_freq', 2)
 
+    t_list = []
+    with open("t.txt") as t:
+        lines = t.readlines()
+        for l in lines:
+            t_list.append(l)
+
+    random.shuffle(t_list)
+    #train_list = t_list[0:36000]
+    #val_list = t_list[-200:]
+
+    train_list = t_list[0:40000]
+    val_list = t_list[-600:]
+
+
     # load data
-    train_list, val_list = get_data_path_list(train_path, val_path)
+    #train_list, val_list = get_data_path_list(train_path, val_path)
 
     train_dataloader = build_dataloader(train_list,
                                         batch_size=batch_size,
@@ -123,7 +137,7 @@ def main(config_path):
         iters = 0
 
         if config.get('first_stage_path', '') != '':
-            first_stage_path = osp.join(log_dir, config.get('first_stage_path', 'first_stage.pth'))
+            first_stage_path = osp.join(log_dir+"/../", config.get('first_stage_path', 'first_stage.pth'))
             print('Loading the first stage model at %s ...' % first_stage_path)
             model, optimizer, start_epoch, iters = load_checkpoint(model, optimizer, first_stage_path,
                                         load_only_params=True)
@@ -152,7 +166,7 @@ def main(config_path):
             batch = [b.to(device) for b in batch]
             texts, input_lengths, mels, mel_input_length, labels, ref_mels, ref_labels = batch
 
-            mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to('cuda')
+            mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to(device)
             m = length_to_mask(input_lengths)
             
             with torch.no_grad():
@@ -210,7 +224,7 @@ def main(config_path):
                 ph.append(ph_lables[bib, :, random_start:random_start+mel_len])
 
                 
-            mask = length_to_mask(torch.LongTensor([mel_len] * batch_size)).to('cuda')
+            mask = length_to_mask(torch.LongTensor([mel_len] * batch_size)).to(device)
             en = torch.stack(en)
             gt = torch.stack(gt).detach()
             ph = torch.stack(ph).detach()
@@ -323,7 +337,7 @@ def main(config_path):
                 texts, input_lengths, mels, mel_input_length, labels, ref_mels, ref_labels = batch
                 
                 with torch.no_grad():
-                    mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to('cuda')
+                    mask = length_to_mask(mel_input_length // (2 ** model.text_aligner.n_down)).to(device)
                     m = length_to_mask(input_lengths)
                     ppgs, s2s_pred, s2s_attn_feat = model.text_aligner(mels, mask, texts)
 

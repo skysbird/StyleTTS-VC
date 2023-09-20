@@ -14,6 +14,7 @@ from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 
 from Utils.ASR.models import ASRCNN
 from Utils.JDC.model import JDCNet
+#from Utils.JDC.model import JDCNet
 
 from munch import Munch
 import yaml
@@ -486,7 +487,15 @@ def load_F0_models(path):
     # load F0 model
 
     F0_model = JDCNet(num_class=1, seq_len=192)
+    #F0_model = JDCNet(num_class=1)
+    pp = torch.load(path, map_location='cpu')
+    print(pp.keys())
+#    m = pp['model']
+#    print(m.keys())
+
     params = torch.load(path, map_location='cpu')['net']
+#    print(params)
+
     F0_model.load_state_dict(params)
     _ = F0_model.train()
     
